@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WireGuard VPN Client Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #qr-container {
+            margin-top: 20px;
+        }
+        #qr-code {
+            max-width: 100%;
+            height: auto;
+        }
+        #status {
+            margin-top: 10px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>WireGuard VPN Client Generator</h1>
+    <p>Click the button below to generate a new VPN client configuration QR code.</p>
+    <button id="generate-btn">Generate QR Code</button>
+    <div id="qr-container" style="display: none;">
+        <h2>Your VPN Configuration</h2>
+        <img id="qr-code" alt="QR Code">
+        <p>Scan this QR code with your WireGuard app to connect to the VPN.</p>
+    </div>
+    <p id="status"></p>
+
+    <script>
+        const generateBtn = document.getElementById('generate-btn');
+        const qrContainer = document.getElementById('qr-container');
+        const qrCode = document.getElementById('qr-code');
+        const status = document.getElementById('status');
+
+        // Replace with your actual server URL
+        const serverUrl = 'https://your-vps-ip:3000/generate-keys';
+
+        generateBtn.addEventListener('click', async () => {
+            status.textContent = 'Generating...';
+            try {
+                const response = await fetch(serverUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer YWRtaW46MTIzNDU2', // admin:123456 base64
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                qrCode.src = 'data:image/png;base64,' + data.qr;
+                qrContainer.style.display = 'block';
+                status.textContent = '';
+            } catch (error) {
+                console.error('Error:', error);
+                status.textContent = 'Error generating QR code. Please try again.';
+                qrContainer.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html></content>
+<parameter name="filePath">/home/convict/Downloads/wireguard/index.html

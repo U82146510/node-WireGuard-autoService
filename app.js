@@ -4,10 +4,14 @@ import { exec } from 'child_process';
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
 import { promisify } from 'util';
+import cors from 'cors';
 
 const app = express();
 const port = 3000;
 const execAsync = promisify(exec);
+
+// Enable CORS for all routes
+app.use(cors());
 
 // Cleanup function to remove expired clients (older than 30 days)
 function cleanupExpiredClients() {
