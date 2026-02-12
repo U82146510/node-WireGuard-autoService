@@ -6,6 +6,7 @@ A Node.js-based REST API server for managing WireGuard VPN clients. This applica
 
 - **Automated Setup**: Automatically sets up WireGuard interface, generates server keys, and configures iptables rules
 - **Client Generation**: Generates unique client configurations with QR codes for easy setup
+- **Device Limiting**: Each device can generate only one VPN configuration
 - **Rate Limiting**: Protects against abuse with configurable rate limits
 - **Automatic Cleanup**: Removes expired clients (older than 30 days) from the configuration
 - **HTTPS Support**: Runs over HTTPS with self-signed certificates
@@ -47,6 +48,22 @@ The application will automatically:
 
 ## Usage
 
+### Web Interface
+
+The easiest way to generate VPN configurations is through the built-in web interface:
+
+1. Start the server: `sudo node app.js`
+2. Open your browser and navigate to `https://your-server:3000`
+3. Click the "Give a name to be understandable by everyone" button
+4. Scan the generated QR code with your WireGuard app
+
+The web interface provides:
+- One-click VPN configuration generation
+- QR code display for easy mobile setup
+- Downloadable config files for all devices
+- Simple installation instructions for Android and iPhone
+- Space for video tutorials
+
 ### API Endpoints
 
 #### Generate Client Keys
@@ -58,23 +75,31 @@ Generates a new WireGuard client configuration and returns a QR code.
 - Username: `admin`
 - Password: `123456`
 
+**Device Limitation:** Each device can generate only one VPN configuration. Returns 429 status if limit exceeded.
+
 **Example Request:**
 ```bash
 curl -X POST -H "Authorization: Bearer admin:123456" \
      https://your-server:3000/generate-keys
 ```
 
-**Response:**
+**Response (Success):**
 ```json
 {
-  "qr": "base64-encoded-png-qr-code"
+  "qr": "base64-encoded-png-qr-code",
+  "config": "wireguard-config-file-content"
 }
+```
+
+**Response (Device Limit Exceeded - 429):**
+```
+You have already created a VPN for this device. Each device can have only one VPN configuration.
 ```
 
 #### Cleanup Expired Clients
 **POST** `/cleanup`
 
-Removes clients that haven't been used in 30+ days.
+Removes clients that haven't been used in 30+ days and clears device tracking for rate limiting.
 
 **Authentication:** Same as above
 
@@ -82,6 +107,11 @@ Removes clients that haven't been used in 30+ days.
 ```bash
 curl -X POST -H "Authorization: Bearer admin:123456" \
      https://your-server:3000/cleanup
+```
+
+**Response:**
+```
+Cleanup initiated. Expired clients will be removed and device tracking cleared.
 ```
 
 ### Client Setup

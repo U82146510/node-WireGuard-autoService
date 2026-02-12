@@ -3,14 +3,20 @@ import https from 'https';
 import { exec } from 'child_process';
 import fs from 'fs';
 import rateLimit from 'express-rate-limit';
-import { promisify } from 'util';
 import cors from 'cors';
+import { promisify } from 'util';
 
 const app = express();
 const port = 3000;
 const execAsync = promisify(exec);
 
-// Enable CORS for all routes
+// IP tracking: Map to store IPs that have generated configs
+const generatedIPs = new Map();
+
+// Serve static files from current directory
+app.use(express.static('.'));
+
+// Enable CORS
 app.use(cors());
 
 // Cleanup function to remove expired clients (older than 30 days)
@@ -144,7 +150,16 @@ app.post('/generate-keys', (req, res) => {
     return res.status(401).send('Invalid credentials');
   }
 
-  proceedToGenerateClient(res);
+  // Get client IP
+  const clientIP = req.ip || req.connection.remoteAddress || req.socket.remoteAddress ||
+                   (req.connection.socket ? req.connection.socket.remoteAddress : null);
+
+  // Check if this IP has already generated a config
+  if (generatedIPs.has(clientIP)) {
+    return res.status(429).send('You have already created a VPN for this device. Each device can have only one VPN configuration.');
+  }
+
+  proceedToGenerateClient(res, clientIP);
 });
 
 app.post('/cleanup', (req, res) => {
@@ -161,10 +176,15 @@ app.post('/cleanup', (req, res) => {
   }
 
   cleanupExpiredClients();
-  res.send('Cleanup initiated. Expired clients will be removed.');
+  
+  // Clear IP tracking when cleanup is performed
+  generatedIPs.clear();
+  console.log('IP tracking cleared during cleanup');
+  
+  res.send('Cleanup initiated. Expired clients will be removed and IP tracking cleared.');
 });
 
-function proceedToGenerateClient(res) {
+function proceedToGenerateClient(res, clientIP) {
   (async () => {
     try {
       const files = await fs.promises.readdir('/etc/wireguard');
@@ -251,7 +271,13 @@ PersistentKeepalive = 25
       await fs.promises.unlink(`/etc/wireguard/${privateKeyFile}`);
       await fs.promises.unlink(`/etc/wireguard/${publicKeyFile}`);
 
-      res.json({ qr: stdout }); // Send base64 encoded PNG in JSON
+      // Track this IP as having generated a config
+      generatedIPs.set(clientIP, Date.now());
+
+      res.json({
+        qr: stdout,
+        config: clientConfig
+      }); // Send both base64 QR code and config text
     } catch (error) {
       console.error(`Error generating client: ${error}`);
       res.status(500).send('Error generating client');

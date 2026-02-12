@@ -3,86 +3,484 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WireGuard VPN Client Generator</title>
+    <title>WireGuard VPN Setup</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+            line-height: 1.6;
+            color: #2d3748;
+            background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            text-align: center;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #007bff;
+
+        .header {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: #38a169;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border: 3px solid #e6fffa;
+        }
+
+        .generate-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .generate-btn {
+            background: linear-gradient(45deg, #48bb78, #38a169);
             color: white;
             border: none;
-            border-radius: 5px;
+            padding: 18px 35px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.3);
+            position: relative;
+            overflow: hidden;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        .generate-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(72, 187, 120, 0.4);
         }
-        #qr-container {
+
+        .generate-btn:active {
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        .generate-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.2);
+        }
+
+        .option-tabs {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 5px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+
+        .tab-btn.active {
+            background: #48bb78;
+            color: white;
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+        }
+
+        .tab-content {
             margin-top: 20px;
         }
-        #qr-code {
-            max-width: 100%;
-            height: auto;
+
+        .download-btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #48bb78, #38a169);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+            transition: all 0.3s ease;
         }
-        #status {
-            margin-top: 10px;
-            color: red;
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(72, 187, 120, 0.4);
+        }
+
+        .download-instructions {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 4px solid #48bb78;
+        }
+
+        .download-instructions h4 {
+            color: #38a169;
+            margin-bottom: 10px;
+        }
+
+        .download-instructions ul {
+            padding-left: 20px;
+        }
+
+        .expiry-notice {
+            background: linear-gradient(135deg, #fff5cd 0%, #fce4a3 100%);
+            border: 2px solid #f6e05e;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(246, 224, 94, 0.3);
+        }
+
+        .expiry-notice h3 {
+            color: #d69e2e;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .expiry-notice p {
+            color: #744210;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .instructions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .instruction-card {
+            background: linear-gradient(135deg, #fef5e7 0%, #fdeaa7 100%);
+            border-radius: 20px;
+            padding: 30px;
+            border-left: 6px solid #f6e05e;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .instruction-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .instruction-card h3 {
+            color: #d69e2e;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .instruction-card ol {
+            padding-left: 20px;
+        }
+
+        .instruction-card li {
+            margin-bottom: 8px;
+        }
+
+        .video-section {
+            text-align: center;
+            background: linear-gradient(135deg, #e6fffa 0%, #b2f5ea 100%);
+            border-radius: 25px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 3px solid #81e6d9;
+        }
+
+        .video-section h2 {
+            color: #2c7a7b;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+        }
+
+        .video-placeholder {
+            background: rgba(255, 255, 255, 0.8);
+            border: 3px dashed #4fd1c9;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            color: #2c7a7b;
+            font-weight: bold;
+        }
+
+        .video-placeholder iframe {
+            width: 100%;
+            max-width: 560px;
+            height: 315px;
+            border: none;
+            border-radius: 10px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 15px;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+
+            .generate-btn {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+
+            .instructions {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .generation-info {
+            background: rgba(72, 187, 120, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            border-left: 3px solid #48bb78;
         }
     </style>
 </head>
 <body>
-    <h1>WireGuard VPN Client Generator</h1>
-    <p>Click the button below to generate a new VPN client configuration QR code.</p>
-    <button id="generate-btn">Generate QR Code</button>
-    <div id="qr-container" style="display: none;">
-        <h2>Your VPN Configuration</h2>
-        <img id="qr-code" alt="QR Code">
-        <p>Scan this QR code with your WireGuard app to connect to the VPN.</p>
+    <div class="container">
+        <header class="header">
+            <h1>🚀 Welcome to Your VPN Setup!</h1>
+            <p>Get your personal VPN configuration with just one magical click ✨</p>
+        </header>
+
+        <main class="main-content">
+            <section class="generate-section">
+                <button id="generateBtn" class="generate-btn">
+                    Get My VPN Configuration
+                </button>
+                <div class="expiry-notice" style="margin-top: 20px; font-size: 0.9rem;">
+                    <p>💡 <strong>Note:</strong> Each VPN configuration is valid for 30 days. You'll need to generate a new one after that period.</p>
+                </div>
+                <div class="generation-info" style="margin-top: 15px; font-size: 0.9rem; color: #666;">
+                    <p>🎯 <strong>How it works:</strong> Click the button above and you'll get both a QR code (for mobile) and a downloadable config file (for any device)!</p>                    <p>� <strong>One per device:</strong> Each device can generate only one VPN configuration.</p>                </div>
+            </section>
+
+            <section id="qrSection" class="qr-section">
+                <h2>🎉 Your VPN is Ready!</h2>
+                <p>You now have <strong>both options</strong> - choose what works best for your device:</p>
+
+                <div class="option-tabs">
+                    <button id="qrTab" class="tab-btn active">📱 QR Code (Mobile)</button>
+                    <button id="downloadTab" class="tab-btn">💾 Download File</button>
+                </div>
+
+                <div id="qrContent" class="tab-content">
+                    <p>📱 Scan this magical QR code with your WireGuard app!</p>
+                    <img id="qrCode" class="qr-code" alt="WireGuard QR Code">
+                </div>
+
+                <div id="downloadContent" class="tab-content" style="display: none;">
+                    <p>💾 Download your config file and import it into WireGuard:</p>
+                    <a id="downloadLink" class="download-btn" download="wireguard.conf">
+                        📥 Download VPN Config File
+                    </a>
+                    <div class="download-instructions">
+                        <h4>📋 How to use the downloaded file:</h4>
+                        <ul>
+                            <li><strong>Android/iOS:</strong> Open WireGuard app → Tap + → "Import from file"</li>
+                            <li><strong>Windows/Mac/Linux:</strong> Open WireGuard app → Import tunnel from file</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="expiry-notice">
+                    <h3>⏰ Important: VPN Expiry Notice</h3>
+                    <p>Your VPN configuration will be valid for <strong>30 days</strong> from creation. After that, you'll need to generate a new one to continue using the VPN. Don't worry - it's quick and easy! 🚀</p>
+                </div>
+
+                <div id="errorMessage" class="error" style="display: none;"></div>
+            </section>
+        </main>
+
+        <section class="instructions">
+            <div class="instruction-card">
+                <h3>📱 Android Installation</h3>
+                <ol>
+                    <li>Open Google Play Store</li>
+                    <li>Search for "WireGuard" and install the official app</li>
+                    <li>Open the WireGuard app</li>
+                    <li>Tap the "+" button and select "Scan QR code"</li>
+                    <li>Scan the QR code above</li>
+                    <li>Give it a name (like "My VPN") and tap "Create"</li>
+                    <li>Toggle the switch to connect!</li>
+                </ol>
+            </div>
+
+            <div class="instruction-card">
+                <h3>🍎 iPhone Installation</h3>
+                <ol>
+                    <li>Open App Store</li>
+                    <li>Search for "WireGuard" and install the official app</li>
+                    <li>Open the WireGuard app</li>
+                    <li>Tap the "+" button and select "Scan QR code from camera"</li>
+                    <li>Point your camera at the QR code above</li>
+                    <li>Give it a name (like "My VPN") and tap "Save"</li>
+                    <li>Toggle the switch to connect!</li>
+                </ol>
+            </div>
+        </section>
+
+        <section class="video-section">
+            <h2>🎥 Watch & Learn!</h2>
+            <div class="video-placeholder">
+                <p>🎬 Your step-by-step video tutorial will go here!</p>
+                <!-- Replace the src with your actual YouTube embed URL -->
+                <!-- <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" allowfullscreen></iframe> -->
+            </div>
+        </section>
     </div>
-    <p id="status"></p>
 
     <script>
-        const generateBtn = document.getElementById('generate-btn');
-        const qrContainer = document.getElementById('qr-container');
-        const qrCode = document.getElementById('qr-code');
-        const status = document.getElementById('status');
+        // Tab switching functionality
+        document.getElementById('qrTab').addEventListener('click', function() {
+            setActiveTab('qr');
+        });
 
-        // Replace with your actual server URL
-        const serverUrl = 'https://your-vps-ip:3000/generate-keys';
+        document.getElementById('downloadTab').addEventListener('click', function() {
+            setActiveTab('download');
+        });
 
-        generateBtn.addEventListener('click', async () => {
-            status.textContent = 'Generating...';
+        function setActiveTab(tab) {
+            const qrTab = document.getElementById('qrTab');
+            const downloadTab = document.getElementById('downloadTab');
+            const qrContent = document.getElementById('qrContent');
+            const downloadContent = document.getElementById('downloadContent');
+
+            if (tab === 'qr') {
+                qrTab.classList.add('active');
+                downloadTab.classList.remove('active');
+                qrContent.style.display = 'block';
+                downloadContent.style.display = 'none';
+            } else {
+                downloadTab.classList.add('active');
+                qrTab.classList.remove('active');
+                downloadContent.style.display = 'block';
+                qrContent.style.display = 'none';
+            }
+        }
+
+        document.getElementById('generateBtn').addEventListener('click', async function() {
+            const btn = this;
+            const qrSection = document.getElementById('qrSection');
+            const qrCode = document.getElementById('qrCode');
+            const downloadLink = document.getElementById('downloadLink');
+            const errorMessage = document.getElementById('errorMessage');
+
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '🔮 Creating your VPN magic...<span class="loading"></span>';
+            errorMessage.style.display = 'none';
+
             try {
-                const response = await fetch(serverUrl, {
+                // Make API call to generate keys
+                const response = await fetch('/generate-keys', {
                     method: 'POST',
                     headers: {
-                        'Authorization': 'Bearer YWRtaW46MTIzNDU2', // admin:123456 base64
+                        'Authorization': 'Bearer admin:123456',
                         'Content-Type': 'application/json'
                     }
                 });
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    if (response.status === 429) {
+                        throw new Error('You have already created a VPN for this device. Each device can have only one VPN configuration.');
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
                 }
 
                 const data = await response.json();
+
+                // Display QR code
                 qrCode.src = 'data:image/png;base64,' + data.qr;
-                qrContainer.style.display = 'block';
-                status.textContent = '';
+
+                // Create download link for config file
+                const configBlob = new Blob([data.config], { type: 'text/plain' });
+                const configUrl = URL.createObjectURL(configBlob);
+                downloadLink.href = configUrl;
+
+                qrSection.style.display = 'block';
+
+                // Scroll to QR section
+                qrSection.scrollIntoView({ behavior: 'smooth' });
+
             } catch (error) {
                 console.error('Error:', error);
-                status.textContent = 'Error generating QR code. Please try again.';
-                qrContainer.style.display = 'none';
+                errorMessage.textContent = 'Failed to generate VPN configuration. Please try again.';
+                errorMessage.style.display = 'block';
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = 'Get My VPN Configuration';
             }
         });
     </script>
 </body>
-</html></content>
-<parameter name="filePath">/home/convict/Downloads/wireguard/index.html
+</html>
